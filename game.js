@@ -35,8 +35,8 @@ let isGameOver = false;
 let spawnTimer = 0;
 let collectibleTimer = 0;
 let groundY = 550;
-let canDoubleJump = false;
 let hasDoubleJumped = false;
+let lastScoreMilestone = 0;
 
 function preload() {
     // Create placeholder graphics for game objects
@@ -151,8 +151,10 @@ function update(time, delta) {
     });
     
     // Gradually increase difficulty
-    if (score > 0 && score % 100 === 0) {
-        gameSpeed = Math.min(gameSpeed + 0.1, 8);
+    const currentMilestone = Math.floor(score / 100) * 100;
+    if (currentMilestone > lastScoreMilestone && currentMilestone > 0) {
+        gameSpeed = Math.min(gameSpeed + 0.5, 8);
+        lastScoreMilestone = currentMilestone;
     }
 }
 
