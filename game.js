@@ -39,8 +39,56 @@ let hasDoubleJumped = false;
 let lastScoreMilestone = 0;
 
 function preload() {
-    // Create placeholder graphics for game objects
-    // In a real game, you'd load actual image assets
+    // Create all game textures once during preload for efficiency
+    createTextures(this);
+}
+
+function createTextures(scene) {
+    // Create player texture
+    const playerGraphic = scene.add.graphics();
+    playerGraphic.fillStyle(0x00ff00, 1);
+    playerGraphic.fillRect(0, 0, 40, 50);
+    playerGraphic.generateTexture('player', 40, 50);
+    playerGraphic.destroy();
+    
+    // Create bug texture
+    const bugGraphic = scene.add.graphics();
+    bugGraphic.fillStyle(0xff0000, 1);
+    bugGraphic.fillCircle(20, 20, 20);
+    bugGraphic.lineStyle(3, 0xff0000);
+    bugGraphic.beginPath();
+    bugGraphic.moveTo(15, 10);
+    bugGraphic.lineTo(10, 0);
+    bugGraphic.moveTo(25, 10);
+    bugGraphic.lineTo(30, 0);
+    bugGraphic.strokePath();
+    bugGraphic.generateTexture('bug', 40, 40);
+    bugGraphic.destroy();
+    
+    // Create collectible textures
+    const collectibleTypes = {
+        keyboard: 0x3498db,
+        mouse: 0x9b59b6,
+        screen: 0xe74c3c,
+        laptop: 0xf39c12
+    };
+    
+    for (const [type, color] of Object.entries(collectibleTypes)) {
+        const collectGraphic = scene.add.graphics();
+        collectGraphic.fillStyle(color, 1);
+        collectGraphic.fillRect(0, 0, 30, 30);
+        collectGraphic.lineStyle(2, 0xffffff);
+        collectGraphic.strokeRect(0, 0, 30, 30);
+        collectGraphic.generateTexture(type, 30, 30);
+        collectGraphic.destroy();
+    }
+    
+    // Create code projectile texture
+    const codeGraphic = scene.add.graphics();
+    codeGraphic.fillStyle(0x00ff00, 1);
+    codeGraphic.fillRect(0, 0, 20, 5);
+    codeGraphic.generateTexture('code', 20, 5);
+    codeGraphic.destroy();
 }
 
 function create() {
@@ -168,34 +216,14 @@ function createGround(scene) {
 }
 
 function createPlayer(scene) {
-    // Create player (developer character) as a rectangle with color
-    const playerGraphic = scene.add.graphics();
-    playerGraphic.fillStyle(0x00ff00, 1);
-    playerGraphic.fillRect(0, 0, 40, 50);
-    playerGraphic.generateTexture('player', 40, 50);
-    playerGraphic.destroy();
-    
+    // Create player (developer character) using pre-generated texture
     player = scene.physics.add.sprite(150, 450, 'player');
     player.setBounce(0.1);
     player.setCollideWorldBounds(true);
 }
 
 function spawnBug(scene) {
-    // Create bug enemy
-    const bugGraphic = scene.add.graphics();
-    bugGraphic.fillStyle(0xff0000, 1);
-    bugGraphic.fillCircle(20, 20, 20);
-    // Add antennae
-    bugGraphic.lineStyle(3, 0xff0000);
-    bugGraphic.beginPath();
-    bugGraphic.moveTo(15, 10);
-    bugGraphic.lineTo(10, 0);
-    bugGraphic.moveTo(25, 10);
-    bugGraphic.lineTo(30, 0);
-    bugGraphic.strokePath();
-    bugGraphic.generateTexture('bug', 40, 40);
-    bugGraphic.destroy();
-    
+    // Create bug enemy using pre-generated texture
     const yPositions = [groundY - 30, groundY - 100, groundY - 170];
     const randomY = Phaser.Utils.Array.GetRandom(yPositions);
     
@@ -205,23 +233,9 @@ function spawnBug(scene) {
 }
 
 function spawnCollectible(scene) {
-    // Create collectible items
+    // Create collectible items using pre-generated textures
     const types = ['keyboard', 'mouse', 'screen', 'laptop'];
     const type = Phaser.Utils.Array.GetRandom(types);
-    const colors = {
-        keyboard: 0x3498db,
-        mouse: 0x9b59b6,
-        screen: 0xe74c3c,
-        laptop: 0xf39c12
-    };
-    
-    const collectGraphic = scene.add.graphics();
-    collectGraphic.fillStyle(colors[type], 1);
-    collectGraphic.fillRect(0, 0, 30, 30);
-    collectGraphic.lineStyle(2, 0xffffff);
-    collectGraphic.strokeRect(0, 0, 30, 30);
-    collectGraphic.generateTexture(type, 30, 30);
-    collectGraphic.destroy();
     
     const yPositions = [groundY - 50, groundY - 120, groundY - 200, groundY - 280];
     const randomY = Phaser.Utils.Array.GetRandom(yPositions);
@@ -234,13 +248,7 @@ function spawnCollectible(scene) {
 function shootCode() {
     if (isGameOver) return;
     
-    // Create code projectile
-    const codeGraphic = this.add.graphics();
-    codeGraphic.fillStyle(0x00ff00, 1);
-    codeGraphic.fillRect(0, 0, 20, 5);
-    codeGraphic.generateTexture('code', 20, 5);
-    codeGraphic.destroy();
-    
+    // Create code projectile using pre-generated texture
     const code = codeProjectiles.create(player.x + 30, player.y, 'code');
     code.body.allowGravity = false;
 }
