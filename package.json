@@ -1,0 +1,19 @@
+{
+  "name": "run-dev-run",
+  "version": "1.0.0",
+  "description": "A Phaser JS runner game where a developer escapes from bugs during compilation",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8080 -c-1",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": ["phaser", "game", "runner"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "phaser": "^3.70.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
