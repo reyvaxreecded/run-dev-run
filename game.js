@@ -43,16 +43,20 @@ let playerXP = 0;
 let levelText;
 let xpBarBg;
 let xpBarFill;
+let xpBarBorder;
+let xpText;
+let levelPanel;
 
 // Progression system constants
 const BASE_XP_REQUIREMENT = 50;
 const XP_GROWTH_MULTIPLIER = 1.5;
-const XP_BAR_WIDTH = 140;
+const XP_BAR_WIDTH = 160;
+const XP_BAR_HEIGHT = 24;
 const LEVEL_UP_SPEED_INCREMENT = 0.3;
 const MAX_GAME_SPEED = 10;
-const LEVEL_UI_X = 650;
-const LEVEL_UI_Y = 16;
-const XP_BAR_Y = 50;
+const LEVEL_UI_X = 620;
+const LEVEL_UI_Y = 10;
+const XP_BAR_Y = 48;
 
 function preload() {
     // Create all game textures once during preload for efficiency
@@ -132,27 +136,54 @@ function create() {
     cursors = this.input.keyboard.createCursorKeys();
     this.input.keyboard.on('keydown-SPACE', shootCode, this);
     
-    // Score display
+    // Score display with enhanced styling
     scoreText = this.add.text(16, 16, 'Score: 0', {
         fontSize: '32px',
         fill: '#00ff00',
-        fontFamily: 'Courier New'
+        fontFamily: 'Courier New',
+        stroke: '#000000',
+        strokeThickness: 4
     });
     
-    // Level display
+    // Level display panel background
+    levelPanel = this.add.graphics();
+    levelPanel.fillStyle(0x1a1a1a, 0.85);
+    levelPanel.fillRoundedRect(LEVEL_UI_X - 10, LEVEL_UI_Y - 5, 180, 70, 8);
+    levelPanel.lineStyle(3, 0xffd700, 1);
+    levelPanel.strokeRoundedRect(LEVEL_UI_X - 10, LEVEL_UI_Y - 5, 180, 70, 8);
+    
+    // Level display with enhanced styling
     levelText = this.add.text(LEVEL_UI_X, LEVEL_UI_Y, 'Level: 1', {
-        fontSize: '28px',
+        fontSize: '32px',
         fill: '#ffd700',
-        fontFamily: 'Courier New'
+        fontFamily: 'Courier New',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 4
     });
+    
+    // XP Bar border
+    xpBarBorder = this.add.graphics();
+    xpBarBorder.lineStyle(3, 0xffd700, 1);
+    xpBarBorder.strokeRoundedRect(LEVEL_UI_X - 2, XP_BAR_Y - 2, XP_BAR_WIDTH + 4, XP_BAR_HEIGHT + 4, 4);
     
     // XP Bar background
-    xpBarBg = this.add.rectangle(LEVEL_UI_X, XP_BAR_Y, XP_BAR_WIDTH, 20, 0x555555);
-    xpBarBg.setOrigin(0, 0);
+    xpBarBg = this.add.graphics();
+    xpBarBg.fillStyle(0x2a2a2a, 1);
+    xpBarBg.fillRoundedRect(LEVEL_UI_X, XP_BAR_Y, XP_BAR_WIDTH, XP_BAR_HEIGHT, 3);
     
     // XP Bar fill
-    xpBarFill = this.add.rectangle(LEVEL_UI_X, XP_BAR_Y, 0, 20, 0xffd700);
-    xpBarFill.setOrigin(0, 0);
+    xpBarFill = this.add.graphics();
+    
+    // XP text label
+    xpText = this.add.text(LEVEL_UI_X + XP_BAR_WIDTH / 2, XP_BAR_Y + XP_BAR_HEIGHT / 2, '0 / 50 XP', {
+        fontSize: '14px',
+        fill: '#ffffff',
+        fontFamily: 'Courier New',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 3
+    }).setOrigin(0.5, 0.5);
     
     // Instructions
     this.add.text(16, 50, 'SPACE: Shoot Code | UP: Jump | DOWN: Glide Down', {
@@ -353,7 +384,21 @@ function addXP(scene, amount) {
 function updateXPBar() {
     const xpNeeded = getXPForLevel(playerLevel);
     const xpProgress = playerXP / xpNeeded;
-    xpBarFill.width = XP_BAR_WIDTH * Math.min(xpProgress, 1);
+    const fillWidth = XP_BAR_WIDTH * Math.min(xpProgress, 1);
+    
+    // Clear and redraw the XP bar fill
+    xpBarFill.clear();
+    if (fillWidth > 0) {
+        xpBarFill.fillStyle(0xffd700, 1);
+        xpBarFill.fillRoundedRect(LEVEL_UI_X, XP_BAR_Y, fillWidth, XP_BAR_HEIGHT, 3);
+        
+        // Add gradient effect with overlay
+        xpBarFill.fillStyle(0xffff00, 0.3);
+        xpBarFill.fillRoundedRect(LEVEL_UI_X, XP_BAR_Y, fillWidth, XP_BAR_HEIGHT / 2, 3);
+    }
+    
+    // Update XP text
+    xpText.setText(playerXP + ' / ' + xpNeeded + ' XP');
 }
 
 function collectItem(player, item) {
