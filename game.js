@@ -50,6 +50,9 @@ const XP_GROWTH_MULTIPLIER = 1.5;
 const XP_BAR_WIDTH = 140;
 const LEVEL_UP_SPEED_INCREMENT = 0.3;
 const MAX_GAME_SPEED = 10;
+const LEVEL_UI_X = 650;
+const LEVEL_UI_Y = 16;
+const XP_BAR_Y = 50;
 
 function preload() {
     // Create all game textures once during preload for efficiency
@@ -137,18 +140,18 @@ function create() {
     });
     
     // Level display
-    levelText = this.add.text(650, 16, 'Level: 1', {
+    levelText = this.add.text(LEVEL_UI_X, LEVEL_UI_Y, 'Level: 1', {
         fontSize: '28px',
         fill: '#ffd700',
         fontFamily: 'Courier New'
     });
     
     // XP Bar background
-    xpBarBg = this.add.rectangle(650, 50, XP_BAR_WIDTH, 20, 0x555555);
+    xpBarBg = this.add.rectangle(LEVEL_UI_X, XP_BAR_Y, XP_BAR_WIDTH, 20, 0x555555);
     xpBarBg.setOrigin(0, 0);
     
     // XP Bar fill
-    xpBarFill = this.add.rectangle(650, 50, 0, 20, 0xffd700);
+    xpBarFill = this.add.rectangle(LEVEL_UI_X, XP_BAR_Y, 0, 20, 0xffd700);
     xpBarFill.setOrigin(0, 0);
     
     // Instructions
@@ -311,10 +314,9 @@ function getXPForLevel(level) {
 function addXP(scene, amount) {
     playerXP += amount;
     
-    const xpNeeded = getXPForLevel(playerLevel);
-    
-    // Check for level up
-    if (playerXP >= xpNeeded) {
+    // Check for level up (handle multiple level-ups)
+    while (playerXP >= getXPForLevel(playerLevel)) {
+        const xpNeeded = getXPForLevel(playerLevel);
         playerXP -= xpNeeded;
         playerLevel++;
         
