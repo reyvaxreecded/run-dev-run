@@ -37,10 +37,48 @@ let collectibleTimer = 0;
 let groundY = 550;
 let hasDoubleJumped = false;
 let lastScoreMilestone = 0;
+let useAIAssets = false;
+let loadedAssets = {};
+let sounds = {};
 
 function preload() {
-    // Create all game textures once during preload for efficiency
-    createTextures(this);
+    // Try to load AI-generated assets first
+    // If they exist, use them; otherwise fall back to procedural generation
+    
+    // Set base path for assets
+    this.load.setPath('assets/');
+    
+    // Try loading sprites
+    this.load.image('player', 'sprites/player.png');
+    this.load.image('bug', 'sprites/bug.png');
+    this.load.image('keyboard', 'sprites/keyboard.png');
+    this.load.image('mouse', 'sprites/mouse.png');
+    this.load.image('screen', 'sprites/screen.png');
+    this.load.image('laptop', 'sprites/laptop.png');
+    
+    // Try loading sounds
+    this.load.audio('jump', 'sounds/jump.mp3');
+    this.load.audio('collect', 'sounds/collect.mp3');
+    this.load.audio('shoot', 'sounds/shoot.mp3');
+    this.load.audio('hit', 'sounds/hit.mp3');
+    
+    // Handle loading errors - fall back to procedural generation
+    this.load.on('loaderror', (file) => {
+        console.log(`Asset not found: ${file.key}, will use procedural generation`);
+    });
+    
+    this.load.on('complete', () => {
+        // Check which assets loaded successfully
+        const textureManager = this.textures;
+        
+        // If AI assets didn't load, create procedural ones
+        if (!textureManager.exists('player') || textureManager.get('player').key === '__MISSING') {
+            createTextures(this);
+        } else {
+            useAIAssets = true;
+            console.log('✨ Using AI-generated assets!');
+        }
+    });
 }
 
 function createTextures(scene) {
@@ -94,6 +132,15 @@ function createTextures(scene) {
 function create() {
     // Set background color
     this.cameras.main.setBackgroundColor('#2c3e50');
+    
+    // Load sounds if available
+    if (this.cache.audio.exists('jump')) {
+        sounds.jump = this.sound.add('jump');
+        sounds.collect = this.sound.add('collect');
+        sounds.shoot = this.sound.add('shoot');
+        sounds.hit = this.sound.add('hit');
+        console.log('🔊 Sound effects loaded!');
+    }
     
     // Create ground
     createGround(this);
@@ -150,10 +197,12 @@ function update(time, delta) {
     if (cursors.up.isDown && player.body.touching.down) {
         player.setVelocityY(-400);
         hasDoubleJumped = false;
+        if (sounds.jump) sounds.jump.play();
     } else if (cursors.up.isDown && !hasDoubleJumped && !player.body.touching.down && player.body.velocity.y > 0) {
         // Double jump when falling
         player.setVelocityY(-350);
         hasDoubleJumped = true;
+        if (sounds.jump) sounds.jump.play();
     }
     
     // Glide down mechanic
@@ -251,10 +300,14 @@ function shootCode() {
     // Create code projectile using pre-generated texture
     const code = codeProjectiles.create(player.x + 30, player.y, 'code');
     code.body.allowGravity = false;
+    
+    if (sounds.shoot) sounds.shoot.play();
 }
 
 function hitBug(player, bug) {
     if (isGameOver) return;
+    
+    if (sounds.hit) sounds.hit.play();
     
     this.physics.pause();
     player.setTint(0xff0000);
@@ -285,6 +338,8 @@ function collectItem(player, item) {
     
     score += points[type];
     scoreText.setText('Score: ' + score);
+    
+    if (sounds.collect) sounds.collect.play();
     
     // Visual feedback
     this.add.text(item.x, item.y - 20, '+' + points[type], {

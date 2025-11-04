@@ -29,6 +29,7 @@ You are a developer running to escape from bugs that appear during compilation. 
 ✅ Shooting mechanic to destroy bugs
 ✅ Score system with increasing difficulty
 ✅ Physics-based gameplay
+✨ **NEW: AI-powered asset generation** - Generate custom sprites and sounds using AI tools!
 
 ## How to Run
 
@@ -42,6 +43,29 @@ npm start
 ```
 
 Then open http://localhost:8080 in your browser.
+
+## AI Asset Generation 🎨🤖
+
+**NEW!** You can now generate custom game assets using AI tools to enhance graphics and sounds!
+
+### Quick Start
+```bash
+# See all available options and prompts
+npm run generate-assets
+
+# Generate specific assets
+npm run generate-assets:player
+npm run generate-assets:collectibles
+npm run generate-assets:sounds
+```
+
+The game automatically detects and uses AI-generated assets if they exist in the `assets/` directory, otherwise falls back to procedural generation.
+
+**📖 Full Guide**: See [AI_ASSETS.md](./AI_ASSETS.md) for detailed instructions on:
+- Using AI APIs (Stability AI, DALL-E, ElevenLabs)
+- Manual asset generation with free tools
+- Optimized prompts for each asset
+- Integration workflow
 
 ## Technologies
 

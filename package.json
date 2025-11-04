@@ -5,7 +5,13 @@
   "main": "index.html",
   "scripts": {
     "start": "npx http-server -p 8080 -c-1",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "echo \"No tests specified\" && exit 0",
+    "generate-assets": "node generate-assets.js",
+    "generate-assets:all": "node generate-assets.js all",
+    "generate-assets:player": "node generate-assets.js player",
+    "generate-assets:bug": "node generate-assets.js bug",
+    "generate-assets:collectibles": "node generate-assets.js collectibles",
+    "generate-assets:sounds": "node generate-assets.js sounds"
   },
   "keywords": ["phaser", "game", "runner"],
   "author": "",
