@@ -253,44 +253,18 @@ function update(time, delta) {
         player.setVelocityY(-400);
         hasDoubleJumped = false;
 
-        // Son de saut
-        if (typeof musicManager !== 'undefined') {
-            try {
-                const ctx = musicManager.audioContext || (musicManager.init(), musicManager.audioContext);
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(600, ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.4, ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.15);
-            } catch (e) {}
+        // Play jump sound
+        if (typeof soundEffects !== 'undefined') {
+            soundEffects.playJumpSound();
         }
     } else if (cursors.up.isDown && !hasDoubleJumped && !player.body.touching.down && player.body.velocity.y > 0) {
         // Double jump when falling
         player.setVelocityY(-350);
         hasDoubleJumped = true;
 
-        // Son de double saut
-        if (typeof musicManager !== 'undefined') {
-            try {
-                const ctx = musicManager.audioContext || (musicManager.init(), musicManager.audioContext);
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(1200, ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.4, ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.15);
-            } catch (e) {}
+        // Play double jump sound
+        if (typeof soundEffects !== 'undefined') {
+            soundEffects.playDoubleJumpSound();
         }
     }
     
@@ -341,6 +315,11 @@ function update(time, delta) {
     if (currentMilestone > lastScoreMilestone && currentMilestone > 0) {
         gameSpeed = Math.min(gameSpeed + 0.5, 8);
         lastScoreMilestone = currentMilestone;
+        
+        // Play milestone achievement sound
+        if (typeof soundEffects !== 'undefined') {
+            soundEffects.playMilestoneSound();
+        }
     }
 }
 
@@ -398,7 +377,11 @@ function spawnBug(scene) {
     bug.setVelocity(0, 0);
     bug.body.allowGravity = false;
     bug.play('bug-idle');
-    bug.setScale(1.5); // Scale up the 80x80 pixel art sprite
+    bug.setScale(1.5);
+  
+    if (typeof soundEffects !== 'undefined') {
+        soundEffects.playEnemySpawnSound();
+    }
 }
 
 function spawnCollectible(scene) {
@@ -423,22 +406,9 @@ function shootCode() {
         musicInitialized = true;
     }
 
-    // Son de tir laser
-    if (typeof musicManager !== 'undefined') {
-        try {
-            const ctx = musicManager.audioContext || (musicManager.init(), musicManager.audioContext);
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(1200, ctx.currentTime);
-            osc.frequency.linearRampToValueAtTime(300, ctx.currentTime + 0.18);
-            gain.gain.setValueAtTime(0.5, ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.18);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.18);
-        } catch (e) {}
+    // Play shoot sound
+    if (typeof soundEffects !== 'undefined') {
+        soundEffects.playShootSound();
     }
 
     // Create code projectile using pre-generated texture
@@ -453,29 +423,20 @@ function hitBug(player, bug) {
     player.setTint(0xff0000);
     isGameOver = true;
 
-    // Joue systématiquement la musique de mort
+    // Play game over sound
+    if (typeof soundEffects !== 'undefined') {
+        soundEffects.playGameOverSound();
+    }
+
+    // Stop background music and play game over music
     if (typeof musicManager !== 'undefined') {
         if (!musicManager.audioContext) {
             musicManager.init();
         }
-        musicManager.stop(); // Stoppe toute musique en cours
-        musicManager.play('gameOver'); // Lance la musique de mort
+        musicManager.stop();
+        musicManager.play('gameOver');
         isMusicPlaying = true;
         musicInitialized = true;
-
-        // Joue un bip immédiat pour feedback sonore
-        try {
-            const ctx = musicManager.audioContext;
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'square';
-            osc.frequency.value = 440;
-            gain.gain.value = 0.5;
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.2);
-        } catch (e) {}
     }
 
     this.add.text(400, 300, 'GAME OVER!\nBugs caught you!\n\nScore: ' + score, {
@@ -504,6 +465,11 @@ function collectItem(player, item) {
     score += points[type];
     scoreText.setText('Score: ' + score);
     
+    // Play collectible sound based on item type
+    if (typeof soundEffects !== 'undefined') {
+        soundEffects.playCollectSound(type);
+    }
+    
     // Visual feedback
     this.add.text(item.x, item.y - 20, '+' + points[type], {
         fontSize: '20px',
@@ -519,6 +485,11 @@ function killBug(projectile, bug) {
     bug.destroy();
     score += 5;
     scoreText.setText('Score: ' + score);
+    
+    // Play bug destruction sound
+    if (typeof soundEffects !== 'undefined') {
+        soundEffects.playBugDestroySound();
+    }
     
     // Visual feedback
     this.add.text(bug.x, bug.y - 20, 'FIXED!', {
