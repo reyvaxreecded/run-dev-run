@@ -209,7 +209,8 @@ async function generateWithDALLE(spec, assetName) {
         
         // Download the image
         const imageResponse = await fetch(imageUrl);
-        const buffer = await imageResponse.buffer();
+        const arrayBuffer = await imageResponse.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
         
         fs.writeFileSync(path.join(__dirname, 'assets', 'sprites', spec.filename), buffer);
         

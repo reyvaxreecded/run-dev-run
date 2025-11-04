@@ -72,7 +72,7 @@ function preload() {
         const textureManager = this.textures;
         
         // If AI assets didn't load, create procedural ones
-        if (!textureManager.exists('player') || textureManager.get('player').key === '__MISSING') {
+        if (!textureManager.exists('player')) {
             createTextures(this);
         } else {
             useAIAssets = true;
