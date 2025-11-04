@@ -37,6 +37,8 @@ let collectibleTimer = 0;
 let groundY = 550;
 let hasDoubleJumped = false;
 let lastScoreMilestone = 0;
+let isMusicPlaying = false;
+let musicInitialized = false;
 
 function preload() {
     // Create all game textures once during preload for efficiency
@@ -124,16 +126,26 @@ function create() {
     });
     
     // Instructions
-    this.add.text(16, 50, 'SPACE: Shoot Code | UP: Jump | DOWN: Glide Down', {
+    this.add.text(16, 50, 'SPACE: Shoot | UP: Jump | DOWN: Glide | M: Music', {
         fontSize: '16px',
         fill: '#ffffff',
         fontFamily: 'Courier New'
     });
     
+    // Music control
+    this.input.keyboard.on('keydown-M', toggleMusic, this);
+    
     // Game title
     this.add.text(400, 100, 'RUN DEV RUN!', {
         fontSize: '48px',
         fill: '#ff6b6b',
+        fontFamily: 'Courier New'
+    }).setOrigin(0.5);
+    
+    // Music hint
+    this.add.text(400, 550, 'Press any key to start music!', {
+        fontSize: '20px',
+        fill: '#ffff00',
         fontFamily: 'Courier New'
     }).setOrigin(0.5);
 }
@@ -148,12 +160,53 @@ function update(time, delta) {
     
     // Jump mechanics
     if (cursors.up.isDown && player.body.touching.down) {
+        // Start music on first interaction
+        if (!musicInitialized) {
+            startGameMusic();
+            musicInitialized = true;
+        }
         player.setVelocityY(-400);
         hasDoubleJumped = false;
+
+        // Son de saut
+        if (typeof musicManager !== 'undefined') {
+            try {
+                const ctx = musicManager.audioContext || (musicManager.init(), musicManager.audioContext);
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.15);
+            } catch (e) {}
+        }
     } else if (cursors.up.isDown && !hasDoubleJumped && !player.body.touching.down && player.body.velocity.y > 0) {
         // Double jump when falling
         player.setVelocityY(-350);
         hasDoubleJumped = true;
+
+        // Son de double saut
+        if (typeof musicManager !== 'undefined') {
+            try {
+                const ctx = musicManager.audioContext || (musicManager.init(), musicManager.audioContext);
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(1200, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.15);
+            } catch (e) {}
+        }
     }
     
     // Glide down mechanic
@@ -247,7 +300,31 @@ function spawnCollectible(scene) {
 
 function shootCode() {
     if (isGameOver) return;
-    
+
+    // Start music on first interaction
+    if (!musicInitialized) {
+        startGameMusic();
+        musicInitialized = true;
+    }
+
+    // Son de tir laser
+    if (typeof musicManager !== 'undefined') {
+        try {
+            const ctx = musicManager.audioContext || (musicManager.init(), musicManager.audioContext);
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(1200, ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(300, ctx.currentTime + 0.18);
+            gain.gain.setValueAtTime(0.5, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.18);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.18);
+        } catch (e) {}
+    }
+
     // Create code projectile using pre-generated texture
     const code = codeProjectiles.create(player.x + 30, player.y, 'code');
     code.body.allowGravity = false;
@@ -259,14 +336,39 @@ function hitBug(player, bug) {
     this.physics.pause();
     player.setTint(0xff0000);
     isGameOver = true;
-    
+
+    // Joue systématiquement la musique de mort
+    if (typeof musicManager !== 'undefined') {
+        if (!musicManager.audioContext) {
+            musicManager.init();
+        }
+        musicManager.stop(); // Stoppe toute musique en cours
+        musicManager.play('gameOver'); // Lance la musique de mort
+        isMusicPlaying = true;
+        musicInitialized = true;
+
+        // Joue un bip immédiat pour feedback sonore
+        try {
+            const ctx = musicManager.audioContext;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.value = 440;
+            gain.gain.value = 0.5;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.2);
+        } catch (e) {}
+    }
+
     this.add.text(400, 300, 'GAME OVER!\nBugs caught you!\n\nScore: ' + score, {
         fontSize: '48px',
         fill: '#ff0000',
         fontFamily: 'Courier New',
         align: 'center'
     }).setOrigin(0.5);
-    
+
     this.add.text(400, 450, 'Refresh to restart', {
         fontSize: '24px',
         fill: '#ffffff',
@@ -308,4 +410,29 @@ function killBug(projectile, bug) {
         fill: '#00ff00',
         fontFamily: 'Courier New'
     }).setAlpha(1).setDepth(100);
+}
+
+// Music control functions
+function startGameMusic() {
+    if (typeof musicManager !== 'undefined') {
+        try {
+            musicManager.play('running');
+            isMusicPlaying = true;
+        } catch (e) {
+            console.log('Music initialization failed. Click to enable music.');
+        }
+    }
+}
+
+function toggleMusic() {
+    if (typeof musicManager === 'undefined') return;
+    
+    if (isMusicPlaying) {
+        musicManager.stop();
+        isMusicPlaying = false;
+    } else {
+        const pattern = isGameOver ? 'gameOver' : 'running';
+        musicManager.play(pattern);
+        isMusicPlaying = true;
+    }
 }
