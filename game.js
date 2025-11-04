@@ -37,37 +37,47 @@ let collectibleTimer = 0;
 let groundY = 550;
 let hasDoubleJumped = false;
 let lastScoreMilestone = 0;
+let backgrounds = [];
+let currentPlayerAnim = 'run';
+
+const BG_WIDTH = 576;
+const BG_HEIGHT = 324;
+=======
 let isMusicPlaying = false;
 let musicInitialized = false;
 
 function preload() {
-    // Create all game textures once during preload for efficiency
-    createTextures(this);
+    // Load player sprite sheet
+    this.load.spritesheet('player', 'assets/player/Main Character - Male - Full spritesheet - No Guide.png', {
+        frameWidth: 64,
+        frameHeight: 64
+    });
+    
+    // Load enemy sprite sheet (using Idle animation)
+    this.load.spritesheet('bug', 'assets/enemies/Microwave/Microwave/Idle.png', {
+        frameWidth: 80,
+        frameHeight: 80
+    });
+    
+    // Load weapon effect for projectiles
+    this.load.image('code', 'assets/player/Main Character - Male - Weapon Effect.png');
+    
+    // Load background layers for parallax effect (using Day theme, background set 1)
+    this.load.image('bg1', 'assets/world/background/1/Day/1.png');
+    this.load.image('bg2', 'assets/world/background/1/Day/2.png');
+    this.load.image('bg3', 'assets/world/background/1/Day/3.png');
+    this.load.image('bg4', 'assets/world/background/1/Day/4.png');
+    this.load.image('bg5', 'assets/world/background/1/Day/5.png');
+    
+    // Load tileset for ground
+    this.load.image('tileset', 'assets/world/tileset/main_tileset.png');
+    
+    // Create collectible textures (since we don't have specific collectible sprites)
+    createCollectibleTextures(this);
 }
 
-function createTextures(scene) {
-    // Create player texture
-    const playerGraphic = scene.add.graphics();
-    playerGraphic.fillStyle(0x00ff00, 1);
-    playerGraphic.fillRect(0, 0, 40, 50);
-    playerGraphic.generateTexture('player', 40, 50);
-    playerGraphic.destroy();
-    
-    // Create bug texture
-    const bugGraphic = scene.add.graphics();
-    bugGraphic.fillStyle(0xff0000, 1);
-    bugGraphic.fillCircle(20, 20, 20);
-    bugGraphic.lineStyle(3, 0xff0000);
-    bugGraphic.beginPath();
-    bugGraphic.moveTo(15, 10);
-    bugGraphic.lineTo(10, 0);
-    bugGraphic.moveTo(25, 10);
-    bugGraphic.lineTo(30, 0);
-    bugGraphic.strokePath();
-    bugGraphic.generateTexture('bug', 40, 40);
-    bugGraphic.destroy();
-    
-    // Create collectible textures
+function createCollectibleTextures(scene) {
+    // Create collectible textures during preload
     const collectibleTypes = {
         keyboard: 0x3498db,
         mouse: 0x9b59b6,
@@ -76,26 +86,89 @@ function createTextures(scene) {
     };
     
     for (const [type, color] of Object.entries(collectibleTypes)) {
-        const collectGraphic = scene.add.graphics();
-        collectGraphic.fillStyle(color, 1);
-        collectGraphic.fillRect(0, 0, 30, 30);
-        collectGraphic.lineStyle(2, 0xffffff);
-        collectGraphic.strokeRect(0, 0, 30, 30);
-        collectGraphic.generateTexture(type, 30, 30);
-        collectGraphic.destroy();
+        const graphics = scene.add.graphics();
+        graphics.fillStyle(color, 1);
+        graphics.fillRect(0, 0, 30, 30);
+        graphics.lineStyle(2, 0xffffff);
+        graphics.strokeRect(0, 0, 30, 30);
+        graphics.generateTexture(type, 30, 30);
+        graphics.destroy();
     }
-    
-    // Create code projectile texture
-    const codeGraphic = scene.add.graphics();
-    codeGraphic.fillStyle(0x00ff00, 1);
-    codeGraphic.fillRect(0, 0, 20, 5);
-    codeGraphic.generateTexture('code', 20, 5);
-    codeGraphic.destroy();
 }
 
+
+function createBackground(scene) {
+    // Create parallax background with 5 layers
+    const bgLayers = ['bg1', 'bg2', 'bg3', 'bg4', 'bg5'];
+    const gameWidth = 800;
+    const gameHeight = 600;
+    
+    bgLayers.forEach((key, index) => {
+        // Create two copies of each background for seamless scrolling
+        const bg1 = scene.add.image(0, 0, key).setOrigin(0, 0);
+        const bg2 = scene.add.image(BG_WIDTH, 0, key).setOrigin(0, 0);
+        
+        // Scale backgrounds to fit game height while maintaining aspect ratio
+        const scale = gameHeight / BG_HEIGHT;
+        bg1.setScale(scale);
+        bg2.setScale(scale);
+        
+        // Store with parallax speed (farther layers move slower)
+        backgrounds.push({
+            sprites: [bg1, bg2],
+            speed: (index + 1) * 0.2 // Speed increases for closer layers
+        });
+    });
+}
+
+function createPlayerAnimations(scene) {
+    // Player sprite sheet has 6 columns x 10 rows
+    // Row 0: Idle (frames 0-5)
+    // Row 1: Run (frames 6-11)
+    // Row 2: Jump (frames 12-17)
+    
+    scene.anims.create({
+        key: 'idle',
+        frames: scene.anims.generateFrameNumbers('player', { start: 0, end: 5 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    
+    scene.anims.create({
+        key: 'run',
+        frames: scene.anims.generateFrameNumbers('player', { start: 6, end: 11 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    
+    scene.anims.create({
+        key: 'jump',
+        frames: scene.anims.generateFrameNumbers('player', { start: 12, end: 17 }),
+        frameRate: 10,
+        repeat: 0
+    });
+}
+
+function createEnemyAnimations(scene) {
+    // Enemy (microwave) idle animation
+    scene.anims.create({
+        key: 'bug-idle',
+        frames: scene.anims.generateFrameNumbers('bug', { start: 0, end: 4 }),
+        frameRate: 8,
+        repeat: -1
+    });
+}
+
+
 function create() {
-    // Set background color
-    this.cameras.main.setBackgroundColor('#2c3e50');
+    // Create parallax background layers
+    createBackground(this);
+    
+    // Create player animations FIRST
+    createPlayerAnimations(this);
+    
+    // Create enemy animations
+    createEnemyAnimations(this);
     
     // Create ground
     createGround(this);
@@ -153,6 +226,18 @@ function create() {
 function update(time, delta) {
     if (isGameOver) {
         return;
+    }
+    
+    // Update parallax background
+    updateBackground();
+    
+    // Player animation state management - only change animation when needed
+    if (player.body.touching.down && currentPlayerAnim !== 'run') {
+        player.play('run', true);
+        currentPlayerAnim = 'run';
+    } else if (player.body.velocity.y < 0 && currentPlayerAnim !== 'jump') {
+        player.play('jump', true);
+        currentPlayerAnim = 'jump';
     }
     
     // Player is always running (auto-run)
@@ -238,32 +323,62 @@ function update(time, delta) {
     }
 }
 
+function updateBackground() {
+    // Update parallax background scrolling
+    const scaledBgWidth = BG_WIDTH * (600 / BG_HEIGHT);
+    
+    backgrounds.forEach(layer => {
+        layer.sprites.forEach(sprite => {
+            sprite.x -= layer.speed;
+            
+            // Reset position for seamless scrolling
+            if (sprite.x <= -scaledBgWidth) {
+                sprite.x = scaledBgWidth;
+            }
+        });
+    });
+}
+
 function createGround(scene) {
     platforms = scene.physics.add.staticGroup();
     
-    // Create ground platform
-    const ground = scene.add.rectangle(400, groundY, 800, 100, 0x34495e);
-    scene.physics.add.existing(ground, true);
-    platforms.add(ground);
+    // Create ground using tileset - scale up the small pixel art tiles
+    const tileWidth = 32;
+    const tileScale = 2; // Scale up 32px tiles to 64px
+    const scaledTileWidth = tileWidth * tileScale;
+    const numTiles = Math.ceil(800 / scaledTileWidth) + 1;
+    
+    for (let i = 0; i < numTiles; i++) {
+        const tile = scene.add.image(i * scaledTileWidth, groundY, 'tileset');
+        tile.setOrigin(0, 0);
+        tile.setScale(tileScale);
+        // Use a specific region of the tileset for the ground
+        tile.setCrop(0, 0, 32, 32);
+        scene.physics.add.existing(tile, true);
+        platforms.add(tile);
+    }
 }
 
 function createPlayer(scene) {
-    // Create player (developer character) using pre-generated texture
+    // Create player (developer character) using sprite sheet
     player = scene.physics.add.sprite(150, 450, 'player');
     player.setBounce(0.1);
     player.setCollideWorldBounds(true);
+    player.setScale(2.5); // Scale up the 64x64 pixel art character
+    player.play('run'); // Start with running animation
 }
 
 function spawnBug(scene) {
-    // Create bug enemy using pre-generated texture
-    const yPositions = [groundY - 30, groundY - 100, groundY - 170];
+    // Create bug enemy using sprite sheet
+    const yPositions = [groundY - 50, groundY - 120, groundY - 190];
     const randomY = Phaser.Utils.Array.GetRandom(yPositions);
     
     const bug = bugs.create(850, randomY, 'bug');
     bug.setVelocity(0, 0);
     bug.body.allowGravity = false;
-    
-    // Play enemy spawn sound
+    bug.play('bug-idle');
+    bug.setScale(1.5);
+  
     if (typeof soundEffects !== 'undefined') {
         soundEffects.playEnemySpawnSound();
     }
