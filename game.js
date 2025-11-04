@@ -283,9 +283,15 @@ function hitBug(player, bug) {
     player.setTint(0xff0000);
     isGameOver = true;
     
-    // Switch to game over music
-    if (isMusicPlaying && typeof musicManager !== 'undefined') {
-        musicManager.switchPattern('gameOver');
+    // Switch to game over music (start even if not playing before)
+    if (typeof musicManager !== 'undefined') {
+        if (isMusicPlaying) {
+            musicManager.switchPattern('gameOver');
+        } else {
+            musicManager.play('gameOver');
+            isMusicPlaying = true;
+            musicInitialized = true;
+        }
     }
     
     this.add.text(400, 300, 'GAME OVER!\nBugs caught you!\n\nScore: ' + score, {
