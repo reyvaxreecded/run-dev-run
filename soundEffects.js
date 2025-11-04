@@ -125,7 +125,7 @@ class SoundEffectsManager {
                 
                 const volume = i === 0 ? 0.6 : 0.3;
                 gain.gain.setValueAtTime(volume, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + soundConfig.duration);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + soundConfig.duration);
                 
                 osc.connect(gain);
                 gain.connect(this.gainNode);
@@ -151,7 +151,7 @@ class SoundEffectsManager {
             osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.2);
             
             gain.gain.setValueAtTime(0.5, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
             
             osc.connect(gain);
             gain.connect(this.gainNode);
@@ -167,7 +167,7 @@ class SoundEffectsManager {
             osc2.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.15);
             
             gain2.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+            gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
             
             osc2.connect(gain2);
             gain2.connect(this.gainNode);
@@ -218,7 +218,7 @@ class SoundEffectsManager {
                 
                 const startTime = ctx.currentTime + (index * 0.05);
                 gain.gain.setValueAtTime(0.4, startTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
                 
                 osc.connect(gain);
                 gain.connect(this.gainNode);
@@ -240,7 +240,9 @@ class SoundEffectsManager {
             osc.type = 'square';
             osc.frequency.value = 440;
             
-            gain.gain.value = 0.5;
+            // Proper envelope for cleaner audio
+            gain.gain.setValueAtTime(0.5, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
             
             osc.connect(gain);
             gain.connect(this.gainNode);
