@@ -37,6 +37,12 @@ let collectibleTimer = 0;
 let groundY = 550;
 let hasDoubleJumped = false;
 let lastScoreMilestone = 0;
+// Progression system variables
+let playerLevel = 1;
+let playerXP = 0;
+let levelText;
+let xpBarBg;
+let xpBarFill;
 
 function preload() {
     // Create all game textures once during preload for efficiency
@@ -122,6 +128,21 @@ function create() {
         fill: '#00ff00',
         fontFamily: 'Courier New'
     });
+    
+    // Level display
+    levelText = this.add.text(650, 16, 'Level: 1', {
+        fontSize: '28px',
+        fill: '#ffd700',
+        fontFamily: 'Courier New'
+    });
+    
+    // XP Bar background
+    xpBarBg = this.add.rectangle(650, 50, 140, 20, 0x555555);
+    xpBarBg.setOrigin(0, 0);
+    
+    // XP Bar fill
+    xpBarFill = this.add.rectangle(650, 50, 0, 20, 0xffd700);
+    xpBarFill.setOrigin(0, 0);
     
     // Instructions
     this.add.text(16, 50, 'SPACE: Shoot Code | UP: Jump | DOWN: Glide Down', {
@@ -260,7 +281,7 @@ function hitBug(player, bug) {
     player.setTint(0xff0000);
     isGameOver = true;
     
-    this.add.text(400, 300, 'GAME OVER!\nBugs caught you!\n\nScore: ' + score, {
+    this.add.text(400, 300, 'GAME OVER!\nBugs caught you!\n\nScore: ' + score + '\nLevel: ' + playerLevel, {
         fontSize: '48px',
         fill: '#ff0000',
         fontFamily: 'Courier New',
@@ -274,6 +295,59 @@ function hitBug(player, bug) {
     }).setOrigin(0.5);
 }
 
+// Calculate XP needed for next level (exponential growth)
+function getXPForLevel(level) {
+    return Math.floor(50 * Math.pow(1.5, level - 1));
+}
+
+// Add XP and check for level up
+function addXP(scene, amount) {
+    playerXP += amount;
+    
+    const xpNeeded = getXPForLevel(playerLevel);
+    
+    // Check for level up
+    if (playerXP >= xpNeeded) {
+        playerXP -= xpNeeded;
+        playerLevel++;
+        
+        // Level up notification
+        const levelUpText = scene.add.text(400, 250, 'LEVEL UP!\nLevel ' + playerLevel, {
+            fontSize: '40px',
+            fill: '#ffd700',
+            fontFamily: 'Courier New',
+            align: 'center',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(1000);
+        
+        // Fade out the level up text
+        scene.tweens.add({
+            targets: levelUpText,
+            alpha: 0,
+            y: 200,
+            duration: 2000,
+            ease: 'Power2',
+            onComplete: () => levelUpText.destroy()
+        });
+        
+        // Increase game speed slightly on level up
+        gameSpeed = Math.min(gameSpeed + 0.3, 10);
+    }
+    
+    // Update level text and XP bar
+    levelText.setText('Level: ' + playerLevel);
+    updateXPBar();
+}
+
+// Update the XP progress bar
+function updateXPBar() {
+    const xpNeeded = getXPForLevel(playerLevel);
+    const xpProgress = playerXP / xpNeeded;
+    const barWidth = 140;
+    xpBarFill.width = barWidth * Math.min(xpProgress, 1);
+}
+
 function collectItem(player, item) {
     const type = item.getData('type');
     const points = {
@@ -283,8 +357,18 @@ function collectItem(player, item) {
         laptop: 30
     };
     
+    const xpReward = {
+        keyboard: 5,
+        mouse: 8,
+        screen: 12,
+        laptop: 20
+    };
+    
     score += points[type];
     scoreText.setText('Score: ' + score);
+    
+    // Add XP for collecting item
+    addXP(this, xpReward[type]);
     
     // Visual feedback
     this.add.text(item.x, item.y - 20, '+' + points[type], {
@@ -301,6 +385,9 @@ function killBug(projectile, bug) {
     bug.destroy();
     score += 5;
     scoreText.setText('Score: ' + score);
+    
+    // Add XP for killing bug
+    addXP(this, 3);
     
     // Visual feedback
     this.add.text(bug.x, bug.y - 20, 'FIXED!', {
