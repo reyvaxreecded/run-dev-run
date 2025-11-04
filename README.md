@@ -6,12 +6,13 @@ An exciting Phaser JS runner game where you play as a developer trying to escape
 
 You are a developer running to escape from bugs that appear during compilation. Your goal is to:
 - **Avoid bugs** (red enemies) that spawn on the screen
-- **Collect items** to gain points:
-  - Keyboard (+10 points)
-  - Mouse (+15 points)
-  - Screen (+20 points)
-  - Laptop (+30 points)
-- **Shoot lines of code** (with SPACE) to fix bugs (+5 points per bug fixed)
+- **Collect items** to gain points and XP:
+  - Keyboard (+10 points, +5 XP)
+  - Mouse (+15 points, +8 XP)
+  - Screen (+20 points, +12 XP)
+  - Laptop (+30 points, +20 XP)
+- **Shoot lines of code** (with SPACE) to fix bugs (+5 points, +3 XP per bug fixed)
+- **Level up** by gaining experience points
 - Survive as long as possible and get the highest score!
 
 ## Controls
@@ -28,6 +29,7 @@ You are a developer running to escape from bugs that appear during compilation. 
 ✅ Bug enemies that spawn dynamically
 ✅ Shooting mechanic to destroy bugs
 ✅ Score system with increasing difficulty
+✅ **Progression and level system with XP rewards**
 ✅ Physics-based gameplay
 
 ## How to Run
@@ -58,5 +60,11 @@ The game features:
 - Code shooting system to eliminate bugs
 - Progressive difficulty (speed increases with score)
 - Jump and fast-fall mechanics for precise movement
+- **Level and XP progression system:**
+  - Gain XP by collecting items and destroying bugs
+  - Level up when reaching XP thresholds
+  - XP requirements increase exponentially with each level
+  - Visual level-up notifications
+  - Game speed increases with each level gained
 
 Enjoy escaping those compilation bugs! 🐛🔫

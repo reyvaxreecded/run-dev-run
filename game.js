@@ -37,6 +37,22 @@ let collectibleTimer = 0;
 let groundY = 550;
 let hasDoubleJumped = false;
 let lastScoreMilestone = 0;
+// Progression system variables
+let playerLevel = 1;
+let playerXP = 0;
+let levelText;
+let xpBarBg;
+let xpBarFill;
+
+// Progression system constants
+const BASE_XP_REQUIREMENT = 50;
+const XP_GROWTH_MULTIPLIER = 1.5;
+const XP_BAR_WIDTH = 140;
+const LEVEL_UP_SPEED_INCREMENT = 0.3;
+const MAX_GAME_SPEED = 10;
+const LEVEL_UI_X = 650;
+const LEVEL_UI_Y = 16;
+const XP_BAR_Y = 50;
 
 function preload() {
     // Create all game textures once during preload for efficiency
@@ -122,6 +138,21 @@ function create() {
         fill: '#00ff00',
         fontFamily: 'Courier New'
     });
+    
+    // Level display
+    levelText = this.add.text(LEVEL_UI_X, LEVEL_UI_Y, 'Level: 1', {
+        fontSize: '28px',
+        fill: '#ffd700',
+        fontFamily: 'Courier New'
+    });
+    
+    // XP Bar background
+    xpBarBg = this.add.rectangle(LEVEL_UI_X, XP_BAR_Y, XP_BAR_WIDTH, 20, 0x555555);
+    xpBarBg.setOrigin(0, 0);
+    
+    // XP Bar fill
+    xpBarFill = this.add.rectangle(LEVEL_UI_X, XP_BAR_Y, 0, 20, 0xffd700);
+    xpBarFill.setOrigin(0, 0);
     
     // Instructions
     this.add.text(16, 50, 'SPACE: Shoot Code | UP: Jump | DOWN: Glide Down', {
@@ -260,7 +291,7 @@ function hitBug(player, bug) {
     player.setTint(0xff0000);
     isGameOver = true;
     
-    this.add.text(400, 300, 'GAME OVER!\nBugs caught you!\n\nScore: ' + score, {
+    this.add.text(400, 300, 'GAME OVER!\nBugs caught you!\n\nScore: ' + score + '\nLevel: ' + playerLevel, {
         fontSize: '48px',
         fill: '#ff0000',
         fontFamily: 'Courier New',
@@ -274,6 +305,57 @@ function hitBug(player, bug) {
     }).setOrigin(0.5);
 }
 
+// Calculate XP needed for next level (exponential growth)
+function getXPForLevel(level) {
+    return Math.floor(BASE_XP_REQUIREMENT * Math.pow(XP_GROWTH_MULTIPLIER, level - 1));
+}
+
+// Add XP and check for level up
+function addXP(scene, amount) {
+    playerXP += amount;
+    
+    // Check for level up (handle multiple level-ups)
+    while (playerXP >= getXPForLevel(playerLevel)) {
+        const xpNeeded = getXPForLevel(playerLevel);
+        playerXP -= xpNeeded;
+        playerLevel++;
+        
+        // Level up notification
+        const levelUpText = scene.add.text(400, 250, 'LEVEL UP!\nLevel ' + playerLevel, {
+            fontSize: '40px',
+            fill: '#ffd700',
+            fontFamily: 'Courier New',
+            align: 'center',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(1000);
+        
+        // Fade out the level up text
+        scene.tweens.add({
+            targets: levelUpText,
+            alpha: 0,
+            y: 200,
+            duration: 2000,
+            ease: 'Power2',
+            onComplete: () => levelUpText.destroy()
+        });
+        
+        // Increase game speed slightly on level up
+        gameSpeed = Math.min(gameSpeed + LEVEL_UP_SPEED_INCREMENT, MAX_GAME_SPEED);
+    }
+    
+    // Update level text and XP bar
+    levelText.setText('Level: ' + playerLevel);
+    updateXPBar();
+}
+
+// Update the XP progress bar
+function updateXPBar() {
+    const xpNeeded = getXPForLevel(playerLevel);
+    const xpProgress = playerXP / xpNeeded;
+    xpBarFill.width = XP_BAR_WIDTH * Math.min(xpProgress, 1);
+}
+
 function collectItem(player, item) {
     const type = item.getData('type');
     const points = {
@@ -283,8 +365,18 @@ function collectItem(player, item) {
         laptop: 30
     };
     
+    const xpReward = {
+        keyboard: 5,
+        mouse: 8,
+        screen: 12,
+        laptop: 20
+    };
+    
     score += points[type];
     scoreText.setText('Score: ' + score);
+    
+    // Add XP for collecting item
+    addXP(this, xpReward[type]);
     
     // Visual feedback
     this.add.text(item.x, item.y - 20, '+' + points[type], {
@@ -301,6 +393,9 @@ function killBug(projectile, bug) {
     bug.destroy();
     score += 5;
     scoreText.setText('Score: ' + score);
+    
+    // Add XP for killing bug
+    addXP(this, 3);
     
     // Visual feedback
     this.add.text(bug.x, bug.y - 20, 'FIXED!', {
