@@ -44,6 +44,13 @@ let levelText;
 let xpBarBg;
 let xpBarFill;
 
+// Progression system constants
+const BASE_XP_REQUIREMENT = 50;
+const XP_GROWTH_MULTIPLIER = 1.5;
+const XP_BAR_WIDTH = 140;
+const LEVEL_UP_SPEED_INCREMENT = 0.3;
+const MAX_GAME_SPEED = 10;
+
 function preload() {
     // Create all game textures once during preload for efficiency
     createTextures(this);
@@ -137,7 +144,7 @@ function create() {
     });
     
     // XP Bar background
-    xpBarBg = this.add.rectangle(650, 50, 140, 20, 0x555555);
+    xpBarBg = this.add.rectangle(650, 50, XP_BAR_WIDTH, 20, 0x555555);
     xpBarBg.setOrigin(0, 0);
     
     // XP Bar fill
@@ -297,7 +304,7 @@ function hitBug(player, bug) {
 
 // Calculate XP needed for next level (exponential growth)
 function getXPForLevel(level) {
-    return Math.floor(50 * Math.pow(1.5, level - 1));
+    return Math.floor(BASE_XP_REQUIREMENT * Math.pow(XP_GROWTH_MULTIPLIER, level - 1));
 }
 
 // Add XP and check for level up
@@ -332,7 +339,7 @@ function addXP(scene, amount) {
         });
         
         // Increase game speed slightly on level up
-        gameSpeed = Math.min(gameSpeed + 0.3, 10);
+        gameSpeed = Math.min(gameSpeed + LEVEL_UP_SPEED_INCREMENT, MAX_GAME_SPEED);
     }
     
     // Update level text and XP bar
@@ -344,8 +351,7 @@ function addXP(scene, amount) {
 function updateXPBar() {
     const xpNeeded = getXPForLevel(playerLevel);
     const xpProgress = playerXP / xpNeeded;
-    const barWidth = 140;
-    xpBarFill.width = barWidth * Math.min(xpProgress, 1);
+    xpBarFill.width = XP_BAR_WIDTH * Math.min(xpProgress, 1);
 }
 
 function collectItem(player, item) {
