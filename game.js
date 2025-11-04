@@ -310,14 +310,16 @@ function updateBackground() {
 function createGround(scene) {
     platforms = scene.physics.add.staticGroup();
     
-    // Create ground using tileset (32x32 tile size based on standard tileset dimensions)
+    // Create ground using tileset - scale up the small pixel art tiles
     const tileWidth = 32;
-    const numTiles = Math.ceil(800 / tileWidth) + 1;
+    const tileScale = 2; // Scale up 32px tiles to 64px
+    const scaledTileWidth = tileWidth * tileScale;
+    const numTiles = Math.ceil(800 / scaledTileWidth) + 1;
     
     for (let i = 0; i < numTiles; i++) {
-        const tile = scene.add.image(i * tileWidth, groundY, 'tileset');
+        const tile = scene.add.image(i * scaledTileWidth, groundY, 'tileset');
         tile.setOrigin(0, 0);
-        tile.setScale(1);
+        tile.setScale(tileScale);
         // Use a specific region of the tileset for the ground
         tile.setCrop(0, 0, 32, 32);
         scene.physics.add.existing(tile, true);
@@ -330,7 +332,7 @@ function createPlayer(scene) {
     player = scene.physics.add.sprite(150, 450, 'player');
     player.setBounce(0.1);
     player.setCollideWorldBounds(true);
-    player.setScale(1.2); // Scale up the character a bit
+    player.setScale(2.5); // Scale up the 64x64 pixel art character
     player.play('run'); // Start with running animation
 }
 
@@ -343,7 +345,7 @@ function spawnBug(scene) {
     bug.setVelocity(0, 0);
     bug.body.allowGravity = false;
     bug.play('bug-idle');
-    bug.setScale(0.8);
+    bug.setScale(1.5); // Scale up the 80x80 pixel art sprite
 }
 
 function spawnCollectible(scene) {
