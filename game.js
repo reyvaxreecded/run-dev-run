@@ -126,7 +126,7 @@ function create() {
     });
     
     // Instructions
-    this.add.text(16, 50, 'SPACE: Shoot Code | UP: Jump | DOWN: Glide Down | M: Music', {
+    this.add.text(16, 50, 'SPACE: Shoot | UP: Jump | DOWN: Glide | M: Music', {
         fontSize: '16px',
         fill: '#ffffff',
         fontFamily: 'Courier New'
