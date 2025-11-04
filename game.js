@@ -38,6 +38,11 @@ let groundY = 550;
 let hasDoubleJumped = false;
 let lastScoreMilestone = 0;
 let backgrounds = [];
+let currentPlayerAnim = 'run';
+
+// Background dimensions constants
+const BG_WIDTH = 576;
+const BG_HEIGHT = 324;
 
 function preload() {
     // Load player sprite sheet
@@ -99,10 +104,10 @@ function createBackground(scene) {
     bgLayers.forEach((key, index) => {
         // Create two copies of each background for seamless scrolling
         const bg1 = scene.add.image(0, 0, key).setOrigin(0, 0);
-        const bg2 = scene.add.image(576, 0, key).setOrigin(0, 0);
+        const bg2 = scene.add.image(BG_WIDTH, 0, key).setOrigin(0, 0);
         
         // Scale backgrounds to fit game height while maintaining aspect ratio
-        const scale = gameHeight / 324;
+        const scale = gameHeight / BG_HEIGHT;
         bg1.setScale(scale);
         bg2.setScale(scale);
         
@@ -214,11 +219,13 @@ function update(time, delta) {
     // Update parallax background
     updateBackground();
     
-    // Player animation state management
-    if (player.body.touching.down) {
+    // Player animation state management - only change animation when needed
+    if (player.body.touching.down && currentPlayerAnim !== 'run') {
         player.play('run', true);
-    } else if (player.body.velocity.y < 0) {
+        currentPlayerAnim = 'run';
+    } else if (player.body.velocity.y < 0 && currentPlayerAnim !== 'jump') {
         player.play('jump', true);
+        currentPlayerAnim = 'jump';
     }
     
     // Player is always running (auto-run)
@@ -286,13 +293,15 @@ function update(time, delta) {
 
 function updateBackground() {
     // Update parallax background scrolling
+    const scaledBgWidth = BG_WIDTH * (600 / BG_HEIGHT);
+    
     backgrounds.forEach(layer => {
         layer.sprites.forEach(sprite => {
             sprite.x -= layer.speed;
             
             // Reset position for seamless scrolling
-            if (sprite.x <= -576 * (600/324)) {
-                sprite.x = 576 * (600/324);
+            if (sprite.x <= -scaledBgWidth) {
+                sprite.x = scaledBgWidth;
             }
         });
     });
@@ -301,8 +310,8 @@ function updateBackground() {
 function createGround(scene) {
     platforms = scene.physics.add.staticGroup();
     
-    // Create ground using tileset (create a repeating pattern)
-    const tileWidth = 32; // Approximate tile width
+    // Create ground using tileset (32x32 tile size based on standard tileset dimensions)
+    const tileWidth = 32;
     const numTiles = Math.ceil(800 / tileWidth) + 1;
     
     for (let i = 0; i < numTiles; i++) {
