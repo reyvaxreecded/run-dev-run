@@ -37,6 +37,8 @@ let collectibleTimer = 0;
 let groundY = 550;
 let hasDoubleJumped = false;
 let lastScoreMilestone = 0;
+let isMusicPlaying = false;
+let musicInitialized = false;
 
 function preload() {
     // Create all game textures once during preload for efficiency
@@ -124,16 +126,26 @@ function create() {
     });
     
     // Instructions
-    this.add.text(16, 50, 'SPACE: Shoot Code | UP: Jump | DOWN: Glide Down', {
+    this.add.text(16, 50, 'SPACE: Shoot Code | UP: Jump | DOWN: Glide Down | M: Music', {
         fontSize: '16px',
         fill: '#ffffff',
         fontFamily: 'Courier New'
     });
     
+    // Music control
+    this.input.keyboard.on('keydown-M', toggleMusic, this);
+    
     // Game title
     this.add.text(400, 100, 'RUN DEV RUN!', {
         fontSize: '48px',
         fill: '#ff6b6b',
+        fontFamily: 'Courier New'
+    }).setOrigin(0.5);
+    
+    // Music hint
+    this.add.text(400, 550, 'Press any key to start music!', {
+        fontSize: '20px',
+        fill: '#ffff00',
         fontFamily: 'Courier New'
     }).setOrigin(0.5);
 }
@@ -148,6 +160,11 @@ function update(time, delta) {
     
     // Jump mechanics
     if (cursors.up.isDown && player.body.touching.down) {
+        // Start music on first interaction
+        if (!musicInitialized) {
+            startGameMusic();
+            musicInitialized = true;
+        }
         player.setVelocityY(-400);
         hasDoubleJumped = false;
     } else if (cursors.up.isDown && !hasDoubleJumped && !player.body.touching.down && player.body.velocity.y > 0) {
@@ -248,6 +265,12 @@ function spawnCollectible(scene) {
 function shootCode() {
     if (isGameOver) return;
     
+    // Start music on first interaction
+    if (!musicInitialized) {
+        startGameMusic();
+        musicInitialized = true;
+    }
+    
     // Create code projectile using pre-generated texture
     const code = codeProjectiles.create(player.x + 30, player.y, 'code');
     code.body.allowGravity = false;
@@ -259,6 +282,11 @@ function hitBug(player, bug) {
     this.physics.pause();
     player.setTint(0xff0000);
     isGameOver = true;
+    
+    // Switch to game over music
+    if (isMusicPlaying && typeof musicManager !== 'undefined') {
+        musicManager.switchPattern('gameOver');
+    }
     
     this.add.text(400, 300, 'GAME OVER!\nBugs caught you!\n\nScore: ' + score, {
         fontSize: '48px',
@@ -308,4 +336,29 @@ function killBug(projectile, bug) {
         fill: '#00ff00',
         fontFamily: 'Courier New'
     }).setAlpha(1).setDepth(100);
+}
+
+// Music control functions
+function startGameMusic() {
+    if (typeof musicManager !== 'undefined') {
+        try {
+            musicManager.play('running');
+            isMusicPlaying = true;
+        } catch (e) {
+            console.log('Music initialization failed. Click to enable music.');
+        }
+    }
+}
+
+function toggleMusic() {
+    if (typeof musicManager === 'undefined') return;
+    
+    if (isMusicPlaying) {
+        musicManager.stop();
+        isMusicPlaying = false;
+    } else {
+        const pattern = isGameOver ? 'gameOver' : 'running';
+        musicManager.play(pattern);
+        isMusicPlaying = true;
+    }
 }
