@@ -46,6 +46,8 @@ let xpBarFill;
 let xpBarBorder;
 let xpText;
 let levelPanel;
+let levelPanelGlow;
+let scorePanel;
 
 // Progression system constants
 const BASE_XP_REQUIREMENT = 50;
@@ -136,21 +138,50 @@ function create() {
     cursors = this.input.keyboard.createCursorKeys();
     this.input.keyboard.on('keydown-SPACE', shootCode, this);
     
+    // Score panel background
+    scorePanel = this.add.graphics();
+    scorePanel.fillStyle(0x1a1a1a, 0.85);
+    scorePanel.fillRoundedRect(10, 10, 240, 50, 8);
+    scorePanel.lineStyle(3, 0x00ff00, 1);
+    scorePanel.strokeRoundedRect(10, 10, 240, 50, 8);
+    
     // Score display with enhanced styling
     scoreText = this.add.text(16, 16, 'Score: 0', {
         fontSize: '32px',
         fill: '#00ff00',
         fontFamily: 'Courier New',
+        fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: 4
+        strokeThickness: 4,
+        shadow: {
+            offsetX: 2,
+            offsetY: 2,
+            color: '#000000',
+            blur: 4,
+            stroke: true,
+            fill: true
+        }
     });
+    
+    // Level display panel glow effect (outer layer)
+    levelPanelGlow = this.add.graphics();
+    levelPanelGlow.fillStyle(0xffd700, 0.15);
+    levelPanelGlow.fillRoundedRect(LEVEL_UI_X - 15, LEVEL_UI_Y - 10, 190, 80, 10);
     
     // Level display panel background
     levelPanel = this.add.graphics();
-    levelPanel.fillStyle(0x1a1a1a, 0.85);
+    levelPanel.fillStyle(0x1a1a1a, 0.9);
     levelPanel.fillRoundedRect(LEVEL_UI_X - 10, LEVEL_UI_Y - 5, 180, 70, 8);
+    
+    // Add inner shadow effect
+    levelPanel.fillStyle(0x000000, 0.3);
+    levelPanel.fillRoundedRect(LEVEL_UI_X - 8, LEVEL_UI_Y - 3, 176, 3, 8);
+    
+    // Gold border with double line effect
     levelPanel.lineStyle(3, 0xffd700, 1);
     levelPanel.strokeRoundedRect(LEVEL_UI_X - 10, LEVEL_UI_Y - 5, 180, 70, 8);
+    levelPanel.lineStyle(1, 0xffff00, 0.5);
+    levelPanel.strokeRoundedRect(LEVEL_UI_X - 8, LEVEL_UI_Y - 3, 176, 66, 7);
     
     // Level display with enhanced styling
     levelText = this.add.text(LEVEL_UI_X, LEVEL_UI_Y, 'Level: 1', {
@@ -159,31 +190,61 @@ function create() {
         fontFamily: 'Courier New',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: 4
+        strokeThickness: 4,
+        shadow: {
+            offsetX: 2,
+            offsetY: 2,
+            color: '#000000',
+            blur: 4,
+            stroke: true,
+            fill: true
+        }
     });
     
-    // XP Bar border
+    // XP Bar outer glow
     xpBarBorder = this.add.graphics();
+    xpBarBorder.fillStyle(0xffd700, 0.2);
+    xpBarBorder.fillRoundedRect(LEVEL_UI_X - 4, XP_BAR_Y - 4, XP_BAR_WIDTH + 8, XP_BAR_HEIGHT + 8, 6);
     xpBarBorder.lineStyle(3, 0xffd700, 1);
     xpBarBorder.strokeRoundedRect(LEVEL_UI_X - 2, XP_BAR_Y - 2, XP_BAR_WIDTH + 4, XP_BAR_HEIGHT + 4, 4);
     
-    // XP Bar background
+    // XP Bar background with gradient effect
     xpBarBg = this.add.graphics();
-    xpBarBg.fillStyle(0x2a2a2a, 1);
+    xpBarBg.fillStyle(0x1a1a1a, 1);
     xpBarBg.fillRoundedRect(LEVEL_UI_X, XP_BAR_Y, XP_BAR_WIDTH, XP_BAR_HEIGHT, 3);
+    xpBarBg.fillStyle(0x000000, 0.4);
+    xpBarBg.fillRoundedRect(LEVEL_UI_X, XP_BAR_Y, XP_BAR_WIDTH, XP_BAR_HEIGHT / 2, 3);
     
     // XP Bar fill
     xpBarFill = this.add.graphics();
     
-    // XP text label
+    // XP text label with enhanced styling
     xpText = this.add.text(LEVEL_UI_X + XP_BAR_WIDTH / 2, XP_BAR_Y + XP_BAR_HEIGHT / 2, '0 / 50 XP', {
         fontSize: '14px',
         fill: '#ffffff',
         fontFamily: 'Courier New',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: 3
-    }).setOrigin(0.5, 0.5);
+        strokeThickness: 3,
+        shadow: {
+            offsetX: 1,
+            offsetY: 1,
+            color: '#000000',
+            blur: 2,
+            stroke: true,
+            fill: true
+        }
+    }).setOrigin(0.5, 0.5).setDepth(100);
+    
+    // Add pulsing animation to level panel glow
+    this.tweens.add({
+        targets: levelPanelGlow,
+        alpha: 0.25,
+        duration: 1500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+    });
     
     // Instructions
     this.add.text(16, 50, 'SPACE: Shoot Code | UP: Jump | DOWN: Glide Down', {
@@ -351,31 +412,94 @@ function addXP(scene, amount) {
         playerXP -= xpNeeded;
         playerLevel++;
         
-        // Level up notification
+        // Create particle effect for level up
+        const particles = scene.add.particles('bug');
+        const emitter = particles.createEmitter({
+            speed: { min: -200, max: 200 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.5, end: 0 },
+            blendMode: 'ADD',
+            lifespan: 1000,
+            gravityY: 200,
+            tint: 0xffd700,
+            frequency: 10,
+            maxParticles: 30,
+            x: 400,
+            y: 250
+        });
+        
+        // Stop emitter after burst
+        scene.time.delayedCall(300, () => {
+            emitter.stop();
+            scene.time.delayedCall(1500, () => particles.destroy());
+        });
+        
+        // Level up notification background
+        const levelUpBg = scene.add.graphics();
+        levelUpBg.fillStyle(0x000000, 0.7);
+        levelUpBg.fillRoundedRect(250, 200, 300, 120, 10);
+        levelUpBg.lineStyle(4, 0xffd700, 1);
+        levelUpBg.strokeRoundedRect(250, 200, 300, 120, 10);
+        levelUpBg.setDepth(999);
+        
+        // Level up notification text
         const levelUpText = scene.add.text(400, 250, 'LEVEL UP!\nLevel ' + playerLevel, {
-            fontSize: '40px',
+            fontSize: '48px',
             fill: '#ffd700',
             fontFamily: 'Courier New',
             align: 'center',
+            fontStyle: 'bold',
             stroke: '#000000',
-            strokeThickness: 4
+            strokeThickness: 6,
+            shadow: {
+                offsetX: 3,
+                offsetY: 3,
+                color: '#000000',
+                blur: 6,
+                stroke: true,
+                fill: true
+            }
         }).setOrigin(0.5).setDepth(1000);
         
-        // Fade out the level up text
+        // Scale up animation for text
         scene.tweens.add({
             targets: levelUpText,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 200,
+            yoyo: true,
+            ease: 'Back.easeOut'
+        });
+        
+        // Fade out the level up notification
+        scene.tweens.add({
+            targets: [levelUpText, levelUpBg],
             alpha: 0,
-            y: 200,
+            y: '-=50',
             duration: 2000,
+            delay: 500,
             ease: 'Power2',
-            onComplete: () => levelUpText.destroy()
+            onComplete: () => {
+                levelUpText.destroy();
+                levelUpBg.destroy();
+            }
+        });
+        
+        // Flash effect on level panel
+        scene.tweens.add({
+            targets: levelPanelGlow,
+            alpha: 0.5,
+            duration: 100,
+            yoyo: true,
+            repeat: 3,
+            ease: 'Linear'
         });
         
         // Increase game speed slightly on level up
         gameSpeed = Math.min(gameSpeed + LEVEL_UP_SPEED_INCREMENT, MAX_GAME_SPEED);
     }
     
-    // Update level text and XP bar
+    // Update level text and XP bar with animation
     levelText.setText('Level: ' + playerLevel);
     updateXPBar();
 }
@@ -389,15 +513,26 @@ function updateXPBar() {
     // Clear and redraw the XP bar fill
     xpBarFill.clear();
     if (fillWidth > 0) {
+        // Main XP bar fill with gradient
         xpBarFill.fillStyle(0xffd700, 1);
         xpBarFill.fillRoundedRect(LEVEL_UI_X, XP_BAR_Y, fillWidth, XP_BAR_HEIGHT, 3);
         
-        // Add gradient effect with overlay
-        xpBarFill.fillStyle(0xffff00, 0.3);
-        xpBarFill.fillRoundedRect(LEVEL_UI_X, XP_BAR_Y, fillWidth, XP_BAR_HEIGHT / 2, 3);
+        // Top highlight for 3D effect
+        xpBarFill.fillStyle(0xffff00, 0.4);
+        xpBarFill.fillRoundedRect(LEVEL_UI_X, XP_BAR_Y, fillWidth, XP_BAR_HEIGHT / 3, 3);
+        
+        // Bottom shadow for depth
+        xpBarFill.fillStyle(0xcc9900, 0.3);
+        xpBarFill.fillRoundedRect(LEVEL_UI_X, XP_BAR_Y + (XP_BAR_HEIGHT * 2/3), fillWidth, XP_BAR_HEIGHT / 3, 3);
+        
+        // Animated shine effect
+        xpBarFill.fillStyle(0xffffff, 0.2);
+        xpBarFill.fillRoundedRect(LEVEL_UI_X + 2, XP_BAR_Y + 2, Math.max(fillWidth - 4, 0), 4, 2);
     }
     
-    // Update XP text
+    // Update XP text with color based on progress
+    const textColor = xpProgress > 0.75 ? '#ffff00' : '#ffffff';
+    xpText.setFill(textColor);
     xpText.setText(playerXP + ' / ' + xpNeeded + ' XP');
 }
 
@@ -423,12 +558,60 @@ function collectItem(player, item) {
     // Add XP for collecting item
     addXP(this, xpReward[type]);
     
-    // Visual feedback
-    this.add.text(item.x, item.y - 20, '+' + points[type], {
-        fontSize: '20px',
+    // Enhanced visual feedback with multiple elements
+    const feedbackBg = this.add.graphics();
+    feedbackBg.fillStyle(0x000000, 0.7);
+    feedbackBg.fillCircle(item.x, item.y - 20, 25);
+    feedbackBg.setDepth(99);
+    
+    const pointsText = this.add.text(item.x, item.y - 25, '+' + points[type], {
+        fontSize: '24px',
         fill: '#ffff00',
-        fontFamily: 'Courier New'
-    }).setAlpha(1).setDepth(100);
+        fontFamily: 'Courier New',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 4,
+        shadow: {
+            offsetX: 2,
+            offsetY: 2,
+            color: '#000000',
+            blur: 4,
+            stroke: true,
+            fill: true
+        }
+    }).setOrigin(0.5).setDepth(100);
+    
+    const xpText = this.add.text(item.x, item.y - 5, '+' + xpReward[type] + ' XP', {
+        fontSize: '16px',
+        fill: '#00ff00',
+        fontFamily: 'Courier New',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 3
+    }).setOrigin(0.5).setDepth(100);
+    
+    // Animate feedback
+    this.tweens.add({
+        targets: [pointsText, xpText, feedbackBg],
+        y: '-=40',
+        alpha: 0,
+        duration: 1500,
+        ease: 'Power2',
+        onComplete: () => {
+            pointsText.destroy();
+            xpText.destroy();
+            feedbackBg.destroy();
+        }
+    });
+    
+    // Scale animation
+    this.tweens.add({
+        targets: [pointsText, xpText],
+        scale: 1.3,
+        duration: 200,
+        yoyo: true,
+        ease: 'Back.easeOut'
+    });
     
     item.destroy();
 }
@@ -442,10 +625,58 @@ function killBug(projectile, bug) {
     // Add XP for killing bug
     addXP(this, 3);
     
-    // Visual feedback
-    this.add.text(bug.x, bug.y - 20, 'FIXED!', {
-        fontSize: '16px',
+    // Enhanced visual feedback
+    const feedbackBg = this.add.graphics();
+    feedbackBg.fillStyle(0x000000, 0.7);
+    feedbackBg.fillCircle(bug.x, bug.y - 20, 30);
+    feedbackBg.setDepth(99);
+    
+    const fixedText = this.add.text(bug.x, bug.y - 20, 'FIXED!', {
+        fontSize: '20px',
         fill: '#00ff00',
-        fontFamily: 'Courier New'
-    }).setAlpha(1).setDepth(100);
+        fontFamily: 'Courier New',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 4,
+        shadow: {
+            offsetX: 2,
+            offsetY: 2,
+            color: '#000000',
+            blur: 4,
+            stroke: true,
+            fill: true
+        }
+    }).setOrigin(0.5).setDepth(100);
+    
+    const xpText = this.add.text(bug.x, bug.y, '+3 XP', {
+        fontSize: '14px',
+        fill: '#ffd700',
+        fontFamily: 'Courier New',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 3
+    }).setOrigin(0.5).setDepth(100);
+    
+    // Animate feedback
+    this.tweens.add({
+        targets: [fixedText, xpText, feedbackBg],
+        y: '-=40',
+        alpha: 0,
+        duration: 1500,
+        ease: 'Power2',
+        onComplete: () => {
+            fixedText.destroy();
+            xpText.destroy();
+            feedbackBg.destroy();
+        }
+    });
+    
+    // Scale animation
+    this.tweens.add({
+        targets: [fixedText, xpText],
+        scale: 1.2,
+        duration: 200,
+        yoyo: true,
+        ease: 'Back.easeOut'
+    });
 }
